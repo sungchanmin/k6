@@ -1,43 +1,29 @@
 import http from "k6/http";
 import { check } from "k6";
-import encoding from 'k6/encoding';
+import encoding from "k6/encoding";
 
-const properties = JSON.parse(open('./properties.json'));
+const properties = JSON.parse(open("./properties.json"));
 
 export const options = {
-  stages: [
-    { duration: '5s', target: 1 },
-    { duration: '5s', target: 2 },
-    { duratino: '5s', target: 0 },
-  ]
+  vus: 1,
+  iterations: 1,
 };
 
-export default function () {
-  // 로그인 페이지 요청 - Response body length is 42952 and Doc title is '로그인 | 임직원을 위한 복리후생관'(euc-kr)
-  let loginPageResponse = http.get(properties.LOGIN_PAGE_URL);
-  check(loginPageResponse, { 'HTTP status code check - Login page response status is 200': (loginPageResponse) => loginPageResponse.status == 200, });
+export function setup() {
+  let FORM_DATA = {
+    "loginSearchBean.userId": properties.USER_ID,
+    "loginSearchBean.password": encoding.b64encode(properties.PASSWORD),
+    "loginSearchBean.loginType": "S",
+    "loginSearchBean.loginKind": "",
+    "loginSearchBean.loginKindSub": "",
+  };
 
-  let loginPageBodyCheck = loginPageResponse.body != null && loginPageResponse.body.length > 40000 && loginPageResponse.html().find('title').html() == '�α��� | �������� ���� �����Ļ���';
-  check(loginPageBodyCheck, { 'Response body check - Login page loaded successfully': () => loginPageBodyCheck, });
+  // 로그인 및 세션 쿠키 값 추출 (복지관 세션 쿠키 : '__KSMSID_USER__')
+  let res = http.post(properties.LOGIN_ACTION_API, FORM_DATA);
+  const SESSION_COOKIE_VALUE = res.cookies.__KSMSID_USER__[0].value;
+  return SESSION_COOKIE_VALUE;
+}
 
-  console.log((loginPageBodyCheck ? 'Login page load success!' : 'Login page load fail...') + ' -------- user' + `${__VU}`);
-
-  if (loginPageResponse.status == 200 && loginPageBodyCheck) {
-    let FORM_DATA = {
-      'loginSearchBean.userId': properties.USER_ID,
-      'loginSearchBean.password': encoding.b64encode(properties.PASSWORD),
-      'loginSearchBean.loginType': 'S',
-      'loginSearchBean.loginKind': '',
-      'loginSearchBean.loginKindSub': ''
-    };
-
-    // 로그인 및 메인 페이지 요청 - Response body length is 4292777 and Doc title is '▒▒ 임직원을 위한 복리후생관 ▒▒'(euc-kr)
-    let loginResponse = http.post(properties.LOGIN_ACTION_API, FORM_DATA);
-    check(loginResponse, { 'HTTP status code check - Login API response status is 200': (loginResponse) => loginResponse.status == 200, });
-
-    let mainPageBodyCheck = loginResponse.body != null && loginResponse.body.length > 400000 && loginResponse.html().find('title').html() == '�Ƣ� �������� ���� �����Ļ��� �Ƣ�';
-    check(mainPageBodyCheck, { 'Response body check - Main page loaded successfully': () => mainPageBodyCheck, });
-
-    console.log((mainPageBodyCheck ? 'Main  page load success!' : 'Main  page load fail...') + ' -------- user' + `${__VU}`);
-  }
+export default function (SESSION_COOKIE_VALUE) {
+  console.log(SESSION_COOKIE_VALUE);
 }
