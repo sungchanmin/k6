@@ -11,11 +11,11 @@ export const options = {
 
 export function setup() {
   let FORM_DATA = {
-    'loginSearchBean.userId': properties.USER_ID,
-    'loginSearchBean.password': encoding.b64encode(properties.PASSWORD),
-    'loginSearchBean.loginType': 'S',
-    'loginSearchBean.loginKind': '',
-    'loginSearchBean.loginKindSub': ''
+    "loginSearchBean.userId": properties.USER_ID,
+    "loginSearchBean.password": encoding.b64encode(properties.PASSWORD),
+    "loginSearchBean.loginType": "S",
+    "loginSearchBean.loginKind": "",
+    "loginSearchBean.loginKindSub": "",
   };
 
   /**
@@ -23,19 +23,21 @@ export function setup() {
    * 'res' 변수에는 결과적으로 최종 응답인 'main.ez?pc(200)'이 담긴다.
    * 'loginAction.ez'(302) 응답이 필요한 경우 옵션으로 '{redirects: 0}'을 명시하여 받을 수 있다.
    * 'EZWEL_USER_KEY' 쿠키는 'loginAction.ez'(302) 응답 헤더에 담겨있기 때문에 아래와 같이 처리하였다.
-   */  
-  let res = http.post(properties.LOGIN_ACTION_API, FORM_DATA, {redirects: 0});
-  
+   */
+  let res = http.post(properties.LOGIN_ACTION_API, FORM_DATA, { redirects: 0 });
+
   const SESSION_COOKIE_VALUE = res.cookies.__KSMSID_USER__[0].value;
   const EZWEL_USER_KEY = res.cookies.EZWEL_USER_KEY[0].value;
-  
-  console.log(SESSION_COOKIE_VALUE);
-  console.log(EZWEL_USER_KEY);
 
-  return res;
+  return {
+    SESSION_COOKIE_VALUE: SESSION_COOKIE_VALUE,
+    EZWEL_USER_KEY: EZWEL_USER_KEY,
+  };
 }
 
-export default function () {
+export default function (COKKIES) {
+  console.log(COKKIES.SESSION_COOKIE_VALUE);
+  console.log(COKKIES.EZWEL_USER_KEY);
   // let res = http.get(properties.MAIN_PAGE_URL, {
   //   cookies: {
   //     __KSMSID_USER__: SESSION_COOKIE_VALUE,
