@@ -11,7 +11,8 @@ export const options = {
 };
 
 /**
- * setup()은 테스트 수행 전 필요한 요청을 미리 수행합니다. (세션 및 유저 정보 쿠키 추출)
+ * setup()은 테스트 수행 전 필요한 요청을 미리 수행합니다.
+ * 응답으로 받은 쿠키 정보를 COOKIES 객체에 보관합니다.
  */
 export function setup() {
   let COOKIES = {};
@@ -31,13 +32,13 @@ export function setup() {
     COOKIES[key] = cuserLoginRes.cookies[key][0].value;
   }
 
-  // 복지샵 ASP 요청
+  
   let options = {
     cookies: {
       __KSMSID_USER__: COOKIES.__KSMSID_USER__,
     },
   };
-
+  // 복지샵 ASP 요청
   let shopAspRes = http.get(properties.SHOP_ASP_URL, options);
   let formTag = parseHTML(shopAspRes.body).find('#divLink');
   
@@ -60,9 +61,9 @@ export function setup() {
     COOKIES[key] = shopLoginRes.cookies[key][0].value;
   }
   
-  for (let key in COOKIES) {
-    console.log(`${key}  -  ${COOKIES[key]}`) 
-  }
+  // for (let key in COOKIES) {
+  //   console.log(`${key}  -  ${COOKIES[key]}`) 
+  // }
   
   return COOKIES;
 }
