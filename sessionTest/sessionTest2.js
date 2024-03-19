@@ -1,6 +1,7 @@
 import http from "k6/http";
 import { check } from "k6";
 import encoding from "k6/encoding";
+import { parseHTML } from 'k6/html';
 
 const properties = JSON.parse(open("./properties.json"));
 
@@ -11,9 +12,13 @@ export const options = {
 
 /**
  * setup()은 테스트 수행 전 필요한 요청을 미리 수행합니다. (세션 및 유저 정보 쿠키 추출)
+ * 1. 복지관 로그인 - loginAction.ez
+ * 2. 복지샵 요청 - asp/asp_main.ez?cspCd=ezshop&goUrl=/shopNew/main/mainFstDepth.ez
+ * 3. 복지샵 로그인 - web/login/loginForm.ez
+ * 4. 복지샵 페이지 - shopNew/main/mainFstDepth.ez
  */
 export function setup() {
-  let FORM_DATA = {
+  let CUSER_FORM_DATA = {
     "loginSearchBean.userId": properties.USER_ID,
     "loginSearchBean.password": encoding.b64encode(properties.PASSWORD),
     "loginSearchBean.loginType": "S",
@@ -21,17 +26,36 @@ export function setup() {
     "loginSearchBean.loginKindSub": "",
   };
 
+  // 복지관 로그인
+  let cuserLoginRes = http.post(properties.LOGIN_ACTION_API, CUSER_FORM_DATA, { redirects: 0 });
+  // 복지샵 ASP 요청
+  let options = {
+    cookies: {
+      __KSMSID_USER__: cuserLoginRes.cookies.__KSMSID_USER__[0].value,
+    },
+  };
+
+  let shopAspRes = http.get(properties.SHOP_ASP_URL, options);
+  let formTag = parseHTML(shopAspRes.body).find('#divLink');
+  
   /**
-   * 로그인 요청시 'loginAction.ez'(302) 응답 후 'main.ez?pc'(200)으로 리다이렉션 됩니다.
-   * 'res'에는 기본적으로 최종 응답인 'main.ez?pc(200)'이 담기며, 'loginAction.ez'(302) 응답이 필요한 경우 옵션으로 '{redirects: 0}'을 명시하여 받을 수 있습니다.
-   * 최초 응답 헤더에 담겨있는 쿠키를 얻기 위해 아래와 같이 처리하였습니다.
+   * shopAspRes 페이지 Form 태그 내 34개의 input 태그 값을 추출합니다.
+   * 추출된 값은 복지샵의 loginForm.ez 요청 시 Form
    */
-  let res = http.post(properties.LOGIN_ACTION_API, FORM_DATA, { redirects: 0 });
+  let SHOP_FORM_DATA = {};
+
+  for (let i = 0; i < formTag.children().size(); i++) {
+      let key = properties.SHOP_ASP_INPUT_NAME[i];
+      let value = formTag.children().get(i).value();
+      SHOP_FORM_DATA[key] = value;
+  }
+
+  for (let key in SHOP_FORM_DATA) { console.log(`${key} : ${SHOP_FORM_DATA[key]}`)}
 
   return {
-    SESSION_COOKIE_VALUE: res.cookies.__KSMSID_USER__[0].value,
-    EZWEL_USER_KEY: res.cookies.EZWEL_USER_KEY[0].value,
-    EZWEL_CLIENT_CD: res.cookies.EZWEL_CLIENT_CD[0].value,
+    SESSION_COOKIE_VALUE: cuserLoginRes.cookies.__KSMSID_USER__[0].value,
+    EZWEL_USER_KEY: cuserLoginRes.cookies.EZWEL_USER_KEY[0].value,
+    EZWEL_CLIENT_CD: cuserLoginRes.cookies.EZWEL_CLIENT_CD[0].vcdalue,
   };
 }
 
