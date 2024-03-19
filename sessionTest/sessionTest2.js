@@ -12,12 +12,10 @@ export const options = {
 
 /**
  * setup()은 테스트 수행 전 필요한 요청을 미리 수행합니다. (세션 및 유저 정보 쿠키 추출)
- * 1. 복지관 로그인 - loginAction.ez
- * 2. 복지샵 요청 - asp/asp_main.ez?cspCd=ezshop&goUrl=/shopNew/main/mainFstDepth.ez
- * 3. 복지샵 로그인 - web/login/loginForm.ez
- * 4. 복지샵 페이지 - shopNew/main/mainFstDepth.ez
  */
 export function setup() {
+  let COOKIES = {};
+
   let CUSER_FORM_DATA = {
     "loginSearchBean.userId": properties.USER_ID,
     "loginSearchBean.password": encoding.b64encode(properties.PASSWORD),
@@ -28,10 +26,15 @@ export function setup() {
 
   // 복지관 로그인
   let cuserLoginRes = http.post(properties.LOGIN_ACTION_API, CUSER_FORM_DATA, { redirects: 0 });
+  // 응답 쿠키 추출
+  for (let key in cuserLoginRes.cookies) {
+    COOKIES[key] = cuserLoginRes.cookies[key][0].value;
+  }
+
   // 복지샵 ASP 요청
   let options = {
     cookies: {
-      __KSMSID_USER__: cuserLoginRes.cookies.__KSMSID_USER__[0].value,
+      __KSMSID_USER__: COOKIES.__KSMSID_USER__,
     },
   };
 
@@ -39,8 +42,9 @@ export function setup() {
   let formTag = parseHTML(shopAspRes.body).find('#divLink');
   
   /**
-   * shopAspRes 페이지 Form 태그 내 34개의 input 태그 값을 추출합니다.
-   * 추출된 값은 복지샵의 loginForm.ez 요청 시 Form
+   * shopAspRes 페이지의 Form 태그에 포함된 34개 input 태그 값을 추출합니다.
+   * 추출된 form-data를 이용하여 복지샵에 loginForm.ez 요청합니다.
+   * (개선 필요 : Doc의 form을 직접 submit하는 방식으로 보다 유연한 테스트 구성)
    */
   let SHOP_FORM_DATA = {};
 
@@ -50,13 +54,17 @@ export function setup() {
       SHOP_FORM_DATA[key] = value;
   }
 
-  for (let key in SHOP_FORM_DATA) { console.log(`${key} : ${SHOP_FORM_DATA[key]}`)}
-
-  return {
-    SESSION_COOKIE_VALUE: cuserLoginRes.cookies.__KSMSID_USER__[0].value,
-    EZWEL_USER_KEY: cuserLoginRes.cookies.EZWEL_USER_KEY[0].value,
-    EZWEL_CLIENT_CD: cuserLoginRes.cookies.EZWEL_CLIENT_CD[0].vcdalue,
-  };
+  let shopLoginRes = http.post(properties.SHOP_LOGIN_ACTION_API, SHOP_FORM_DATA, { redirects: 0 });
+  // 응답 쿠키 추출
+  for (let key in shopLoginRes.cookies) {
+    COOKIES[key] = shopLoginRes.cookies[key][0].value;
+  }
+  
+  for (let key in COOKIES) {
+    console.log(`${key}  -  ${COOKIES[key]}`) 
+  }
+  
+  return COOKIES;
 }
 
 export default function (COOKIES) {
@@ -71,7 +79,7 @@ export default function (COOKIES) {
 
   let options = {
     cookies: {
-      __KSMSID_USER__: COOKIES.SESSION_COOKIE_VALUE,
+      __KSMSID_USER__: COOKIES.__KSMSID_USER__,
     },
   };
 
