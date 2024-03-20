@@ -26,7 +26,7 @@ export function setup() {
    * 'res'에는 기본적으로 최종 응답인 'main.ez?pc(200)'이 담기며, 'loginAction.ez'(302) 응답이 필요한 경우 옵션으로 '{redirects: 0}'을 명시하여 받을 수 있습니다.
    * 최초 응답 헤더에 담겨있는 쿠키를 얻기 위해 아래와 같이 처리하였습니다.
    */
-  let res = http.post(properties.LOGIN_ACTION_API, FORM_DATA, { redirects: 0 });
+  let res = http.post(properties.CUSER_LOGIN_ACTION_API, FORM_DATA, { redirects: 0 });
 
   return {
     SESSION_COOKIE_VALUE: res.cookies.__KSMSID_USER__[0].value,
@@ -51,12 +51,12 @@ export default function (COOKIES) {
     },
   };
 
-  let res = http.post(properties.POINT_CALL_AJAX, FORM_DATA, options);
+  let res = http.post(properties.CUSER_POINT_CALL_AJAX, FORM_DATA, options);
   console.log(res.body);
   
 
   check(res, { 
     'HTTP status code check - 간편포인트조회 AJAX status is 200': (r) => r.status == 200, 
-    'Response body JSON data check - userName is 테크부문': (r) => JSON.parse(r.body.substring(1, res.body.length - 1)).userName == '테크부문',
+    'Response body JSON data check - userName is 테크부문': (r) => r.status == 200 && JSON.parse(r.body.substring(1, res.body.length - 1)).userName == '테크부문',
   });
 }
