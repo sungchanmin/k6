@@ -56,13 +56,13 @@ export default function (COOKIES) {
   let cuserPointCallRes = http.post(properties.CUSER_POINT_CALL_AJAX, CUSER_POINT_CALL_FORM_DATA, options);
   check(cuserPointCallRes, { 
     'HTTP status code check - 간편포인트조회 AJAX status is 200': (r) => r.status == 200, 
-    'Response body JSON data check - userName is 테크부문': (r) => JSON.parse(r.body.substring(1, cuserPointCallRes.body.length - 1)).userName == '테크부문',
+    'Response body JSON data check - userName is 테크부문': (r) => r.status == 200 && JSON.parse(r.body.substring(1, cuserPointCallRes.body.length - 1)).userName == '테크부문',
   });
 
   // 복지샵 메인페이지 요청 및 검증 - Response body length is 81822 and Doc title is '복지SHOP'(euc-kr)
   let shopMainPageRes = http.get(properties.SHOP_MAIN_PAGE_URL, options);
   check(shopMainPageRes, { 
     'HTTP status code check - SHOP main page response status is 200': (r) => r.status == 200,
-    'Response body check - SHOP Main page loaded successfully': (r) => r.body.length > 80000 && r.html().find('title').html() == '����SHOP',
+    'Response body check - SHOP Main page loaded successfully': (r) => r.status == 200 && r.body.length > 80000 && r.html().find('title').html() == '����SHOP',
   });
 }
