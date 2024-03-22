@@ -21,6 +21,7 @@ export function setup() {
     "loginSearchBean.loginKind": "",
     "loginSearchBean.loginKindSub": "",
   };
+  const SHOP_FORM_DATA = {};
 
   // 복지관 로그인 및 쿠키 보관
   let cuserLoginRes = http.post(properties.CUSER_LOGIN_ACTION_API, CUSER_FORM_DATA, { redirects: 0 });
@@ -29,7 +30,6 @@ export function setup() {
   // 복지샵 ASP 요청 및 Form 태그에 포함된 34개 input 태그 값 추출
   let shopAspRes = http.get(properties.SHOP_ASP_URL, HEADER);
   let formTag = parseHTML(shopAspRes.body).find('#divLink');
-  const SHOP_FORM_DATA = {};
   
   for (let i = 0; i < formTag.children().size(); i++) {
       let key = properties.SHOP_ASP_INPUT_NAME[i];
