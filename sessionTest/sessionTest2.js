@@ -2,12 +2,14 @@ import http from "k6/http";
 import { check } from "k6";
 import encoding from "k6/encoding";
 import { parseHTML } from 'k6/html';
+import { Trend } from 'k6/metrics';
 
 const properties = JSON.parse(open("./properties.json"));
+const serverWaitingTime = new Trend('waiting_time');
 
 export const options = {
-  vus: 1,
-  iterations: 1,
+  vus: 10,
+  iterations: 10,
 };
 
 // 테스트 수행 전 필요한 쿠키 정보 보관(복지관, 복지샵)
@@ -59,6 +61,9 @@ export default function (COOKIES) {
     'HTTP status code check - 간편포인트조회 AJAX status is 200': (r) => r.status == 200, 
     'Response body JSON data check - userName is 테크부문': (r) => r.status == 200 && JSON.parse(r.body.substring(1, cuserPointCallRes.body.length - 1)).userName == '테크부문',
   });
+
+  // 커스텀 측정 항목 - 서버 응답 시간
+  serverWaitingTime.add(cuserPointCallRes.timings.waiting);
 
   // 복지샵 메인페이지 요청 및 검증 - Response body length is 81822 and Doc title is '복지SHOP'(euc-kr)
   let shopMainPageRes = http.get(properties.SHOP_MAIN_PAGE_URL, HEADERS);
