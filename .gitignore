@@ -1,6 +1,11 @@
 # 계정 정보 및 엔드포인트
 properties.json
+
 # JSON 데이터 확인
 temp.json
+
 #스크린샷
 *.png
+
+#txt 파일
+*.txt
