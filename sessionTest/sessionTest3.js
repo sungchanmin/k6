@@ -9,7 +9,9 @@ const properties = JSON.parse(open("./properties.json"));
 export const options = {
   scenarios: {
     ui: {
-      executor: "shared-iterations",
+      executor: 'constant-vus',
+      vus: 3,
+      duration: '30s',
       options: {
         browser: {
           type: "chromium",
